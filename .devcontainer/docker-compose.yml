@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # 1. アプリケーション本体 (Next.js)
+  app:
+    image: mcr.microsoft.com/devcontainers/base:bookworm
+    volumes:
+      - ..:/workspaces/${localWorkspaceFolderBasename}:cached
+    
+    # コンテナを起動し続けるための設定
+    command: sleep infinity
+    
+    # データベースと同じネットワークに参加させる
+    networks:
+      - app-network
+
+  # 2. データベース (PostgreSQL) volumesのファイルでデータが保存されている場所を指定する
+  db:
+    image: postgres:17.8-bookworm
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+# データの永続化設定（コンテナを消してもデータが消えないようにする）
+volumes:
+  postgres-data:
+
+networks:
+  app-network:
+    driver: bridge

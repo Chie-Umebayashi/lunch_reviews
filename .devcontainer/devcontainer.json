@@ -1,0 +1,40 @@
+{
+  "name": "Lunch Review Dev Container",
+  // 1. docker-compose.yml を使うように指定
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app", // docker-compose 内のどのサービスに入るか
+  "workspaceFolder": "/workspaces/",
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "nodeGypDependencies": true,
+      "installYarnUsingApt": true,
+      "version": "24.14.1",
+      "pnpmVersion": "latest",
+      "nvmVersion": "latest"
+    }
+  },
+
+  "containerEnv": {
+    // 2. 重要：ホスト名は localhost ではなく「db」になります（コンテナ間通信のため）
+    "DATABASE_URL": "postgresql://postgres:password@db:5432/postgres?schema=public"
+  },
+
+  "forwardPorts": [3000, 5432],
+
+  // コンテナ作成後に実行するコマンド
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y postgresql-client && cd app && npm install && bash /workspaces/db/ensure-schema.sh",
+
+  "remoteUser": "vscode",
+
+  // 便利な拡張機能（Prisma用など）を自動で入れる設定
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "prisma.prisma",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  }
+}
