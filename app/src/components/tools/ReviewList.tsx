@@ -28,9 +28,23 @@ export default function ReviewList({
                 ? "bg-blue-50 border-blue-500 ring-1 ring-blue-500" 
                 : "bg-white border-gray-200 hover:border-blue-300"}`}
           >
-            <div className="flex items-center justify-between">
-                <p className="font-bold text-lg">{review.name}</p>
-                <p className="text-sm text-gray-500 truncate">{review.comment}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0 flex-1">
+                {review.imageUrl ? (
+                  <div className="shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-slate-100 border border-slate-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- data URL */}
+                    <img
+                      src={review.imageUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : null}
+                <div className="min-w-0">
+                  <p className="font-bold text-lg">{review.name}</p>
+                  <p className="text-sm text-gray-500 truncate">{review.comment}</p>
+                </div>
+              </div>
             </div>
           
           <div className="flex flex-col justify-end items-end min-w-[40px]">

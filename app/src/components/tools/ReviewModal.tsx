@@ -1,9 +1,11 @@
 "use client";
-import { useLayoutEffect, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Review } from "@/types/review";
 
-const LocationPickMap = dynamic(() => import("@/components/LocationPickMap"), {
+const MAX_IMAGE_FILE_BYTES = 512 * 1024;
+
+const LocationPickMap = dynamic(() => import("@/components/tools/LocationPickMap"), {
   ssr: false,
   loading: () => (
     <div className="h-[320px] rounded-2xl bg-slate-100 flex items-center justify-center text-sm text-slate-500">
@@ -29,6 +31,7 @@ interface ReviewModalProps {
     comment: string;
     lat: number;
     lng: number;
+    imageUrl: string | null;
   }) => void | Promise<void>;
 }
 
@@ -40,13 +43,18 @@ export default function ReviewModal({
   newReviewMapDraft,
   onSave,
 }: ReviewModalProps) {
+  const photoInputId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [location, setLocation] = useState("");
   const [comment, setComment] = useState("");
   const [picked, setPicked] = useState<{ lat: number; lng: number } | null>(null);
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
 
   const isEdit = reviewToEdit != null;
 
+  // モーダルを開いたとき・編集対象が変わったときにフォームを親の props から同期する
+  /* eslint-disable react-hooks/set-state-in-effect -- controlled reset when isOpen / reviewToEdit / draft changes */
   useLayoutEffect(() => {
     if (!isOpen) return;
     if (reviewToEdit) {
@@ -54,6 +62,7 @@ export default function ReviewModal({
       setComment(reviewToEdit.comment);
       setLocation("");
       setPicked({ lat: reviewToEdit.lat, lng: reviewToEdit.lng });
+      setImageDataUrl(reviewToEdit.imageUrl);
     } else {
       setName("");
       setComment("");
@@ -63,10 +72,28 @@ export default function ReviewModal({
           ? { lat: newReviewMapDraft.lat, lng: newReviewMapDraft.lng }
           : null
       );
+      setImageDataUrl(null);
     }
   }, [isOpen, reviewToEdit, newReviewMapDraft]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!isOpen) return null;
+
+  const applyImageFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      alert("画像ファイルを選んでください");
+      return;
+    }
+    if (file.size > MAX_IMAGE_FILE_BYTES) {
+      alert("画像は 512KB 以下にしてください");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") setImageDataUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async () => {
     const latLng = picked ?? { lat: defaultMapCenter.lat, lng: defaultMapCenter.lng };
@@ -78,6 +105,7 @@ export default function ReviewModal({
         comment,
         lat: latLng.lat,
         lng: latLng.lng,
+        imageUrl: imageDataUrl,
       });
       onClose();
     } catch {
@@ -111,11 +139,69 @@ export default function ReviewModal({
         <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-x-10 lg:gap-y-8 lg:items-start">
           <div className="space-y-5 min-w-0 lg:pr-2">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">お店の写真</label>
-            <div className="group border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-all">
-              <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">📷</div>
-              <p className="text-sm text-gray-500 font-medium">クリックして写真を選択</p>
-              <p className="text-xs text-gray-400 mt-1">またはドラッグ＆ドロップ</p>
+            <label htmlFor={photoInputId} className="block text-sm font-bold text-gray-700 mb-1">
+              お店の写真
+            </label>
+            <input
+              id={photoInputId}
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) applyImageFile(file);
+                e.target.value = "";
+              }}
+            />
+            <div
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const file = e.dataTransfer.files?.[0];
+                if (file) applyImageFile(file);
+              }}
+              className="group border-2 border-dashed border-gray-200 rounded-2xl p-6 text-center hover:border-blue-400 hover:bg-blue-50 cursor-pointer transition-all"
+            >
+              {imageDataUrl ? (
+                <div className="relative inline-block max-w-full">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- data URL from user upload */}
+                  <img
+                    src={imageDataUrl}
+                    alt=""
+                    className="max-h-48 w-auto mx-auto rounded-xl object-contain"
+                  />
+                  <button
+                    type="button"
+                    className="mt-3 text-sm font-bold text-red-600 hover:text-red-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setImageDataUrl(null);
+                    }}
+                  >
+                    写真を削除
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">📷</div>
+                  <p className="text-sm text-gray-500 font-medium">クリックして写真を選択</p>
+                  <p className="text-xs text-gray-400 mt-1">またはドラッグ＆ドロップ（512KB まで）</p>
+                </>
+              )}
             </div>
           </div>
 

@@ -25,7 +25,10 @@ interface LocationPickMapProps {
 function DropOnMap({ onPick }: { onPick: (ll: L.LatLng) => void }) {
   const map = useMap();
   const onPickRef = useRef(onPick);
-  onPickRef.current = onPick;
+
+  useEffect(() => {
+    onPickRef.current = onPick;
+  }, [onPick]);
 
   useEffect(() => {
     const el = map.getContainer();

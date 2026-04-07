@@ -85,6 +85,16 @@ export default function ReviewDetail({ review, onEdit, onDelete }: ReviewDetailP
       {review ? (
         <div className="animate-in fade-in duration-500">
           <h3 className="text-2xl font-bold text-blue-600">{review.name}</h3>
+          {review.imageUrl ? (
+            <div className="mt-4 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100">
+              {/* eslint-disable-next-line @next/next/no-img-element -- data URL stored in DB */}
+              <img
+                src={review.imageUrl}
+                alt=""
+                className="w-full max-h-64 object-contain"
+              />
+            </div>
+          ) : null}
           <p className="mt-4 text-gray-700 leading-relaxed font-medium">
             {review.comment}
           </p>

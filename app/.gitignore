@@ -9,6 +9,13 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+app/node_modules/
+.next/
+app/.next/
+.env
+.env*.local
+*.Zone.Identifier
+.DS_Store
 
 # testing
 /coverage

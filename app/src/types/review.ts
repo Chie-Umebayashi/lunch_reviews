@@ -5,4 +5,6 @@ export type Review = {
   lat: number;
   lng: number;
   likes: number;
+  /** data URL (data:image/...) or null */
+  imageUrl: string | null;
 };
