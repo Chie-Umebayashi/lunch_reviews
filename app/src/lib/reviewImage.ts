@@ -8,7 +8,7 @@ const MAX_IMAGE_DATA_URL_LENGTH = 600_000;
 export function parseOptionalImageDataUrl(raw: unknown): string | null {
   if (raw === undefined || raw === null) return null;
   if (typeof raw !== "string") {
-    throw new Error("imageUrl は文字列または省略してください");
+    throw new Error("imageUrl は文字列にしてください(未入力可)");
   }
   const t = raw.trim();
   if (t === "") return null;

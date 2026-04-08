@@ -16,8 +16,11 @@ export async function POST(_req: Request, context: RouteContext) {
     const pool = getPool();
     const userId = await getOrCreateAnonymousUserId(pool);
     await pool.query(
-      `INSERT INTO review_likes (review_id, user_id) VALUES ($1, $2)
-       ON CONFLICT DO NOTHING`,
+      `WITH deleted AS (
+        DELETE FROM review_likes WHERE review_id = $1 AND user_id = $2
+        RETURNING *
+      )
+      INSERT INTO review_likes (review_id, user_id) SELECT $1, $2 WHERE NOT EXISTS (SELECT 1 FROM deleted)`,
       [reviewId, userId]
     );
     const count = await pool.query<{ likes: string }>(

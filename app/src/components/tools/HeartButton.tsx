@@ -37,11 +37,18 @@ export default function HeartButton({ reviewId, likes, onLikesChange }: HeartBut
       } catch {
         return;
       }
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.log("いいねに失敗しました");
+        console.log(data);
+        return;
+      }
       const n = parseLikesPayload(data);
       if (n !== null) {
         onLikesChange?.(n);
       }
+    }catch{
+      console.log("errorをcatchしました");
+      
     } finally {
       setBusy(false);
     }
